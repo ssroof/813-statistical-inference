@@ -1,0 +1,118 @@
+---
+title: "813 Final Project"
+author: "Sabrina Roof"
+date: "5/6/2020"
+output: pdf_document
+---
+
+
+```{r packages, include = FALSE}
+library("scales")
+library("here")
+library("magrittr")
+library("tidyverse")
+library("naniar")
+library("broom")
+library("tidylog")
+library("nnet")
+library("foreign")
+library("scales")
+```
+
+```{r chunk-options, include = FALSE}
+knitr::opts_chunk$set(
+  include = FALSE, echo = FALSE, collapse = TRUE,
+  warning = FALSE, message = FALSE,
+  cache = TRUE, 
+  fig.align = "center",
+  fig.width = 4, fig.height = 3, 
+  out.width = "80%"
+)
+```
+
+```{r load data}
+pilot <- read_csv(here("data", "anes_pilot_2019.csv"))
+pilot
+
+slim_pilot <- as_tibble(pilot) %>%
+  select(
+    caseid,
+    party_id = pid1d,
+    birthyr,
+    gender,
+    health = health1a,
+    bmi,
+    smoke = smoker2,
+    exercise,
+    vote = vote20jb
+  )
+```
+
+```{r recode variables}
+na_strings <- c(-1, -7)
+
+slim_pilot <- slim_pilot %>%
+  replace_with_na_all(condition = ~.x %in% na_strings)
+
+# Party
+slim_pilot <- slim_pilot %>%
+  mutate(
+    party = case_when(
+      party_id == 1 ~ "0",
+      party_id == 2 ~ "1"
+    )
+  )
+
+# Age
+slim_pilot <- slim_pilot %>%
+  mutate(
+    age = 2018 - birthyr
+  )
+```
+
+```{r model}
+slim_pilot$vote <- as.factor(slim_pilot$vote)
+
+table(slim_pilot$vote)
+
+slim_pilot$vote2 = relevel(slim_pilot$vote, ref = 4)
+
+table(slim_pilot$vote2)
+
+reg <- multinom(vote2 ~ health + bmi + smoke + exercise + age + gender + party_id, data = slim_pilot)
+
+reg_tidy <- tidy(reg, conf.int = TRUE)
+reg_tidy
+```
+
+There is plenty of exploration into the issues that drive vote choice during presidential elections. In the coming 2020 election, issues like immigration, health care, and the economy will play important rolls in helping voters determine who they will choose to govern. There is less exploration, however, into the health of voters, specifically if there are health differences between voters who support different candidates. I hypothesize individuals who plan to vote for Republican Donald Trump in 2020 are less healthy than those who plan to vote for Democrat Joe Biden. I hypothesize this for multiple reasons. We know rural areas are more conservative, and these areas find it more difficult to access health care. Individuals living in rural areas may also be without health care benefits from their employers. Republicans tend to oppose subsidized health care, and this could influence their desire to apply for programs like Medicare and Medicaid when they did it. Recently, this group of individuals have become less trusting of science and elites, and this may create distrust towards medical professionals and deter individuals from seeking care. Democrats are usually more educated and may know when to seek care than individuals who are less educated.
+
+I chose to use data from the 2019 ANES Pilot Study. The questionnaire includes questions about voting in 2016 and 2018, validated voter turnout, preferences for the Democratic presidential primaries and vote intentions in 2020, misinformation, and many topical issues including impeachment. The questionnaire includes a section about the health of the respondent. This section provided me with questions to use as independent variables for measuring health. The study also asked the respondents who they would vote for in 2020 given Biden and Trump are the nominees which acts as the dependent variable. I chose to include age, gender, and party as controls. The following list includes the question wordings for the independent, dependent, and control variables.
+
+1. "Generally speaking, do you usually think of yourself as a Democrat, a Republican, an independent, or what?"
+
+2. "Would you say in general your health is: Poor, Fair, Good, Very good, or Excellent?"
+
+3. "Do you now smoke cigarettes every day, some days, or not at all?"
+
+4. "How often do you work out or exercise?"
+
+5. "If the 2020 presidential election were between Donald Trump for the Republicans and Joe Biden for the Democrats, would you vote for Donald Trump, Joe Biden, someone else, or probably not vote?"
+
+
+Because my dependent variable (2020 vote choice) is an unranked categorical variable (Biden, Trump, other, choose not to vote), I need to use a multinomial model for my formula.
+
+\begin{align}
+  y_{vote choice} = \beta x_{health} + \beta x_{bmi} + \beta x_{smoke} + \beta x_{exercise} + \beta x_{age} + \beta x_{gender} + \beta x_{party}
+\end{align}
+
+
+The factors in the statistical analysis include 3165 respondents to questions regarding health, bmi, smoking habits, exercise, age, gender, and party identification. The issue in question is whether health conditions are related to planned vote choice. After running my model, I can find which variables may be significant in the formula. As evident in Table 1, the chosen factors are not significant to vote choice and are unrelated to 2020 presidential vote intentions. These findings reject my initial hypothesis that repsondent health would be related to presidential vote in 2020.
+
+
+```{r results-latex, include = knitr::is_latex_output(), results = "asis"}
+texreg::texreg(list(reg),
+               caption = "Multinomial Logit Results")
+```
+
+

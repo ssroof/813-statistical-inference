@@ -25,16 +25,8 @@ slim_pilot <- as_tibble(pilot) %>%
     birthyr,
     gender,
     health = health1a,
-    hospital,
     bmi,
-    hearing = disable1,
-    sight = disable2,
-    mental = disable3,
-    mobility = disable4,
-    dress = disable5,
-    errands = disable6,
-    smoke = smoker1,
-    smoke_freq = smoker2,
+    smoke = smoker2,
     exercise,
     vote = vote20jb
   )
@@ -63,46 +55,11 @@ slim_pilot <- as_tibble(pilot) %>%
   # Poor (1), Fair (2), Good (3), Very good (4), Excellent (5),
   # Inapplicable, legitimate skip (-1)
 
-# comp_health: "Compared to others your age, would you say that in general your health is:"
-  # Poor (1), Fair (2), Good (3), Very good (4), Excellent (5),
-  # Inapplicable, legitimate skip (-1)
-
-# hospital: "Have you or a member of your immediate family spent the night in a hospital
-#   in the past 12 months?"
-  # This has happened in the past year (1)
-  # This has not happened n the past year (2)
-  # Inapplicable, legitimate skip (-1)
-
 # bmi: Body Mass Index, computed from height and weight
   # Range: 5.1355 - 3232.1361
 
-# "Which of the following conditions do you have?"
-
-# - hearing: "Deafness or difficulty hearing."
-  # I have this (1), I do not have this (2), No answer (-7), inapplicable, legitimate skip (-1)
-
-# - sight: "Blindness or serious difficulty seeing even when wearing glasses."
-  # I have this (1), I do not have this (2), No answer (-7), inapplicable, legitimate skip (-1)
-
-# - mental: "Serious difficulty concentrating, remembering, or making decisions due to a physical,
-#     mental, or emotional condition."
-  # I have this (1), I do not have this (2), No answer (-7), inapplicable, legitimate skip (-1)
-
-# - mobility: "Serious difficulty walking or climbing stairs."
-  # I have this (1), I do not have this (2), No answer (-7), inapplicable, legitimate skip (-1)
-
-# - dress: "Difficulty dressing or bathing."
-  # I have this (1), I do not have this (2), No answer (-7), inapplicable, legitimate skip (-1)
-
-# - errands: "Difficulty doing errands alone such as visiting a doctor's office or shopping due
-#     to a physical, mental, or emotional condition."
-  # I have this (1), I do not have this (2), No answer (-7), inapplicable, legitimate skip (-1)
-
-# smoke: "Have you smoked at least 100 cigarettes in your entire life?"
-  # Yes (1), No (2), Inapplicable, legitimate skip (-1)
-
-# smoke_freq: "Do you smoke cigarettes every day, some days, or not at all?"
-  # Every day (1), Some days (2), Not at all (3), Inapplicable, legitimate skip (-1)
+# smoke: "Do you now smoke cigarettes every day, some days, or not at all?"
+  # Every day (1), Some days (2), Not at all (3)
 
 # exercise: "How often do you work out or exercise?"
   # Never (1), A few times a year (2), Once or twice a month (3), Several times a week (4),
@@ -155,17 +112,8 @@ slim_pilot <- slim_pilot %>%
 # age: discrete
 # gender: indicator
 # health: likert
-# comp_health: likert
-# hospital: indicator
-# bmi: continuous
-# hearing: indicator
-# sight: indicator
-# mental: indicator
-# mobility: indicator
-# dress: indicator
-# errands: indicator
+# bmi: categorical
 # smoke: indicator
-# smoke_freq: likert
 # exercise: likert
 # vote: unordered categorical (multinomial)
 
@@ -178,24 +126,11 @@ slim_pilot$vote2 = relevel(slim_pilot$vote, ref = 4)
 
 table(slim_pilot$vote2)
 
-reg <- multinom(vote2 ~ health + hospital + bmi + hearing + sight + mobility + dress
-                + errands + smoke + smoke_freq + exercise, data = slim_pilot)
+reg <- multinom(vote2 ~ health + bmi + smoke + exercise + age + gender + party_id, data = slim_pilot)
 
 reg_tidy <- tidy(reg, conf.int = TRUE)
 reg_tidy
 
-stargazer(reg, type = "text", out = "reg.htm")
-
-
-
-
-
-
-
-
-
-
-
-
+texreg::screenreg(list(reg))
 
 
